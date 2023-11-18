@@ -1,3 +1,13 @@
+<!-- 
+    Author: [GitHub NAG-OC]
+    Project: Barcode Scanner Input Web Application
+    Date: [2023]
+    License: [License Type, e.g., MIT License]
+    Description: This web application is designed for efficient barcode scanning and data processing via webhooks from platforms like Make.com or any platform that suports Webhooks.
+    Copyright © [2023] by [NAG-OC]. All rights reserved.
+-->
+
+
 <!DOCTYPE html>
 <html>
 <head>
