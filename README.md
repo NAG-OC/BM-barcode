@@ -1,6 +1,5 @@
 # Guide to Setting Up and Using the Barcode Scanner Web App
-
-## Current Version: 1.0.0
+# Current Version: 1.0.0
 
 
 ## Introduction
