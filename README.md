@@ -1,5 +1,8 @@
 # Guide to Setting Up and Using the Barcode Scanner Web App
 
+## Current Version: 1.0.0
+
+
 ## Introduction
 Welcome to the Barcode Scanner Input Web Application! This application is designed to facilitate efficient barcode scanning and data processing. It's particularly useful for businesses and individuals looking to integrate barcode scanning into their workflows, with a special focus on integration via webhooks for platforms like Make.com.
 
