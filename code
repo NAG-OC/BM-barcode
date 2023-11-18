@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barcode Scanner Input</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #barcodeInput {
+            width: 90%;
+            max-width: 400px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        @media only screen and (max-width: 600px) {
+            #barcodeInput {
+                width: 100%;
+                padding: 10px;
+            }
+            #status {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body onload="initPage()">
+    <input type="text" id="barcodeInput" placeholder="Scan Barcode Here" oninput="handleInput()">
+    <div id="status"></div>
+
+    <script>
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Screen wake lock is active');
+                }
+            } catch (err) {
+                console.error(`Failed to activate wake lock: ${err.name}, ${err.message}`);
+            }
+        }
+
+        function initPage() {
+            document.getElementById('barcodeInput').focus();
+            checkAndSendCachedData();
+            checkInternetConnection();
+            keepFocusOnInput();
+            requestWakeLock();
+        }
+
+        function keepFocusOnInput() {
+            document.addEventListener('click', function() {
+                document.getElementById('barcodeInput').focus();
+            });
+        }
+
+        function isValidBarcode(barcodeData) {
+            const barcodeRegex = /^\d{6}-\d{3}-\d{3}$/; // Regex for pattern like 129142-262-418
+            return barcodeRegex.test(barcodeData);
+        }
+
+        function handleInput() {
+            var barcodeData = document.getElementById('barcodeInput').value;
+            if (isValidBarcode(barcodeData)) {
+                sendData(barcodeData);
+            } else {
+                displayStatus('Invalid barcode format', 'error');
+                setTimeout(function() {
+                    document.getElementById('barcodeInput').value = '';
+                }, 1000);
+            }
+        }
+
+        function sendData(barcodeData) {
+            var webhookUrl = 'PASTE YOUR WEBHOOK HERE';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", webhookUrl, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    var status = xhr.status;
+                    if (status === 0 || (status >= 200 && status < 400)) {
+                        displayStatus('Data sent successfully!', 'success');
+                        checkAndSendCachedData();
+                    } else {
+                        displayStatus('Error sending data: ' + xhr.statusText, 'error');
+                        cacheData(barcodeData);
+                    }
+                    document.getElementById('barcodeInput').value = '';
+                }
+            };
+
+            xhr.onerror = function () {
+                displayStatus('Network error, data cached. Please check your internet connection.', 'error');
+                cacheData(barcodeData);
+            };
+
+            xhr.send(JSON.stringify({ data: barcodeData }));
+        }
+
+        function cacheData(data) {
+            var cachedData = localStorage.getItem('cachedBarcodes');
+            if (cachedData) {
+                cachedData = JSON.parse(cachedData);
+            } else {
+                cachedData = [];
+            }
+            cachedData.push(data);
+            localStorage.setItem('cachedBarcodes', JSON.stringify(cachedData));
+        }
+
+        function checkAndSendCachedData() {
+            var cachedData = localStorage.getItem('cachedBarcodes');
+            if (cachedData) {
+                cachedData = JSON.parse(cachedData);
+                if (cachedData.length > 0) {
+                    sendData(cachedData.shift());
+                    localStorage.setItem('cachedBarcodes', JSON.stringify(cachedData));
+                }
+            }
+        }
+
+        function displayStatus(message, statusClass) {
+            var statusDiv = document.getElementById('status');
+            statusDiv.innerText = message;
+            statusDiv.className = statusClass;
+        }
+
+        function checkInternetConnection() {
+            if (navigator.onLine) {
+                displayStatus('Connected to the internet. Ready to send data.', 'success');
+            } else {
+                displayStatus('No internet connection. Data will be sent when the connection is restored.', 'error');
+            }
+            setTimeout(checkInternetConnection, 5000);
+        }
+
+        // Add event listeners to handle wake lock release and reacquisition
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        });
+    </script>
+</body>
+</html>
